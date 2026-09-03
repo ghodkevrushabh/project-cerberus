@@ -1,0 +1,18 @@
+title: Kerberoasting - RC4 Service Ticket Request
+id: 7c2b3f20-cerberus-phase2
+status: experimental
+description: Detects a Kerberos service ticket (TGS) request using RC4 encryption (etype 0x17), a strong indicator of Kerberoasting (T1558.003), since legitimate modern Kerberos traffic should use AES.
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4769
+    TicketEncryptionType: '0x17'
+  condition: selection
+falsepositives:
+  - Legacy applications or service accounts still configured for RC4 only
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1558.003

@@ -1,0 +1,133 @@
+{
+  "name": "Project Cerberus - Ransomware Kill Chain Emulation",
+  "versions": {
+    "attack": "15",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Five-phase ransomware kill chain emulation (DarkSide/BlackCat-ALPHV operational pattern). Each technique below was executed, detected, and remediated as a matched pair on an isolated AWS lab environment. Colors indicate detection/remediation status: all techniques in this layer were fully detected and remediated with verified before/after evidence.",
+  "filters": {
+    "platforms": ["Windows"]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "aggregateFunction": "average",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "color": "#3ecf8e",
+      "comment": "Phase 1 - Initial Access (project framing): Low-and-slow password spray against DC and Workstation via netexec. Detected via Wazuh correlation rule (100010) on repeated Event 4625 from a single source. Remediated with account lockout policy + firewall block; re-test confirmed account lockout triggered live and firewall block fully prevented repeat access.",
+      "enabled": true,
+      "score": 100,
+      "metadata": [
+        { "name": "Detection Rule", "value": "Wazuh 100010" },
+        { "name": "Sigma Rule", "value": "rules/sigma/phase1-password-spray.yml" },
+        { "name": "Status", "value": "Detected + Remediated + Verified" }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1558.003",
+      "tactic": "credential-access",
+      "color": "#3ecf8e",
+      "comment": "Phase 2 - Credential Theft: Kerberoasting against a deliberately RC4-only service account (svc-sql). Ticket enumerated and extracted via Impacket, cracked with John the Ripper in 19 seconds. Detected via Wazuh rule (100020) on RC4-encrypted TGS requests. Remediated by enforcing AES128/AES256 encryption; re-test confirmed the resulting ticket was uncrackable and correctly did not trigger the RC4-specific detection.",
+      "enabled": true,
+      "score": 100,
+      "metadata": [
+        { "name": "Detection Rule", "value": "Wazuh 100020" },
+        { "name": "Sigma Rule", "value": "rules/sigma/phase2-kerberoasting.yml" },
+        { "name": "Status", "value": "Detected + Cracked + Remediated + Verified" }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "color": "#3ecf8e",
+      "comment": "Phase 3 - C2 Beaconing: Simulated low-jitter (10%) outbound heartbeat, 60s base interval, from the Workstation to the Monitoring host. Detected via a standalone Zeek conn.log jitter-analysis script measuring coefficient of variation (6.53% on full dataset, well under the 15% threshold). Remediated with an outbound firewall block; re-test confirmed the beacon failed at the endpoint with zero new connections reaching the network layer.",
+      "enabled": true,
+      "score": 100,
+      "metadata": [
+        { "name": "Detection Method", "value": "scripts/beacon_jitter_check.py (Zeek conn.log analysis)" },
+        { "name": "Sigma Rule", "value": "rules/sigma/phase3-c2-beaconing.yml" },
+        { "name": "Status", "value": "Detected + Remediated + Verified" }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#3ecf8e",
+      "comment": "Phase 4 - Defense Evasion (project framing): Base64-encoded PowerShell command (-EncodedCommand) used to disable Windows Defender real-time protection. Detected via Wazuh rule (100030) on decoded Script Block Logging content (Event 4104) - detection defeats the obfuscation entirely since the engine logs the executed, decoded script, not the typed command. Remediated with PowerShell Constrained Language Mode; re-test showed the attack failed not just at execution but at payload-construction, since building the encoded command itself requires restricted .NET method calls.",
+      "enabled": true,
+      "score": 100,
+      "metadata": [
+        { "name": "Detection Rule", "value": "Wazuh 100030" },
+        { "name": "Sigma Rule", "value": "rules/sigma/phase4-obfuscated-powershell.yml" },
+        { "name": "Related Technique", "value": "T1562.001 (Impair Defenses - Disable Tools), for the Defender-tampering action specifically" },
+        { "name": "Status", "value": "Detected + Remediated + Verified" }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "color": "#e0a548",
+      "comment": "Phase 4 (secondary mapping): the specific action of disabling Windows Defender's real-time protection via Set-MpPreference. Included alongside T1059.001 since the project's execution vector (obfuscated PowerShell) and its effect (impairing defenses) are technically distinct ATT&CK techniques working together in this attack.",
+      "enabled": true,
+      "score": 75,
+      "metadata": [
+        { "name": "Note", "value": "Secondary/contextual mapping - not independently detected by a dedicated rule in this project; captured as part of the T1059.001 script block content." }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1560",
+      "tactic": "collection",
+      "color": "#3ecf8e",
+      "comment": "Phase 5 - Data Staging & Impact: Password-protected 7-Zip archive of staged 'sensitive' files, created from within the Workstation's temp directory. Detected via Wazuh rule (100040) matching archive-utility execution combined with a temp-directory working path (Sysmon Event ID 1). Remediated with Kerberos ticket revocation and endpoint isolation (firewall block against the attacker's IP); containment confirmed via 100% packet loss on re-test, and the project's IR evidence-collection script was run as the closing response action.",
+      "enabled": true,
+      "score": 100,
+      "metadata": [
+        { "name": "Detection Rule", "value": "Wazuh 100040" },
+        { "name": "Sigma Rule", "value": "rules/sigma/phase5-data-staging.yml" },
+        { "name": "Status", "value": "Detected + Remediated + Verified" }
+      ],
+      "links": [],
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": ["#ff6666", "#ffe766", "#8ec843"],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    { "label": "Fully detected, remediated, and re-test verified (primary technique)", "color": "#3ecf8e" },
+    { "label": "Secondary/contextual technique mapping (not independently detected)", "color": "#e0a548" }
+  ],
+  "metadata": [
+    { "name": "Project", "value": "Project Cerberus - CDAC PG-DITISS Capstone" },
+    { "name": "Environment", "value": "AWS (single VPC, 4 EC2 instances)" },
+    { "name": "Detection Stack", "value": "Wazuh 4.14.7, Suricata 7.0.17, Zeek 8.0 LTS" },
+    { "name": "Note", "value": "Phase numbering (1-5) reflects this project's ransomware-kill-chain framing (modeled on DarkSide/BlackCat-ALPHV), which does not map one-to-one with ATT&CK's own tactic categories - e.g., T1110 is an ATT&CK Credential Access technique even though it served as this project's 'Initial Access' phase, consistent with how password spraying often functions as an initial foothold in real ransomware operations despite its formal ATT&CK classification." }
+  ],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#0a0d0f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

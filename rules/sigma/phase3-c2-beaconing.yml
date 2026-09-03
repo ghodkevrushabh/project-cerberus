@@ -1,0 +1,28 @@
+title: Regular Low-Jitter Outbound Connections Indicative of C2 Beaconing
+id: 4a7e9c30-cerberus-phase3
+status: experimental
+description: >
+  Detects a host making outbound TCP connections to the same destination at
+  highly regular intervals (low coefficient of variation), a signature of
+  scheduled C2 beaconing rather than organic human or application traffic.
+  Intended for use against Zeek conn.log data rather than a single log source
+  field match, since this is a statistical/behavioral detection.
+logsource:
+  category: network_connection
+  product: zeek
+detection:
+  selection:
+    dest_port: 443
+    proto: tcp
+  timeframe: 10m
+  condition: selection | count() by src_ip, dest_ip > 3
+  # Note: actual jitter/coefficient-of-variation calculation is performed by
+  # scripts/beacon_jitter_check.py against Zeek's conn.log, since standard
+  # Sigma detection logic does not natively express timing-variance analysis.
+falsepositives:
+  - Legitimate scheduled tasks, health checks, or monitoring agents with fixed polling intervals
+  - NTP or other genuinely periodic system services
+level: medium
+tags:
+  - attack.command_and_control
+  - attack.t1071.001

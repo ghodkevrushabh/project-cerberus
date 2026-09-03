@@ -1,0 +1,33 @@
+title: Obfuscated or Encoded PowerShell Execution
+id: 9d1f4e50-cerberus-phase4
+status: experimental
+description: >
+  Detects PowerShell Script Block Logging events (Event ID 4104) whose decoded
+  content contains indicators of obfuscation or defense-tampering, such as
+  Base64 encoding/decoding calls, Invoke-Expression, or direct manipulation of
+  Windows Defender preferences. Script Block Logging captures the fully
+  decoded script regardless of how it was originally invoked or encoded.
+logsource:
+  product: windows
+  service: microsoft-windows-powershell/operational
+detection:
+  selection:
+    EventID: 4104
+  keywords:
+    ScriptBlockText|contains:
+      - '-enc'
+      - '-EncodedCommand'
+      - 'FromBase64String'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DisableRealtimeMonitoring'
+  condition: selection and keywords
+falsepositives:
+  - Legitimate administrative scripts using IEX or Base64 encoding for non-malicious reasons (uncommon but possible)
+  - Software deployment tools that dynamically construct and invoke PowerShell
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.t1059.001
+  - attack.t1562.001

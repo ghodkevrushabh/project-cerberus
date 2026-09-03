@@ -1,0 +1,32 @@
+<!-- Project Cerberus — Custom Wazuh Correlation Rules -->
+<!-- Place at /var/ossec/etc/rules/local_rules.xml -->
+<!-- IMPORTANT: <if_matched_sid> must reference the actual base rule ID for "Logon Failure -->
+<!-- Unknown user or bad password" on YOUR installed ruleset. In our build (Wazuh 4.14.7) -->
+<!-- this was 60122 — but verify it yourself: Dashboard > Server Management > Rules > -->
+<!-- search "logon failure". Don't assume this ID carries over to a different version. -->
+
+<group name="local,cerberus,">
+  <!-- Phase 1 — Initial Access (T1110): 5+ Windows logon failures from the same source within 120s -->
+  <rule id="100010" level="10" frequency="5" timeframe="120">
+    <if_matched_sid>60122</if_matched_sid>
+    <description>CERBERUS - Multiple Windows logon failures, possible password spray (T1110)</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <!-- Phase 2 — Credential Theft (T1558.003): Kerberos service ticket requested with RC4 encryption -->
+  <!-- Requires: Kerberos Service Ticket Operations auditing enabled on the DC (auditpol), and the -->
+  <!-- Security event channel forwarded via the agent's ossec.conf <localfile> block. -->
+  <!-- NOTE: verify the exact field name in your dashboard's Discover view before relying on this — -->
+  <!-- Wazuh's decoder field naming for ticket encryption type can vary by version. -->
+  <rule id="100020" level="12">
+    <if_group>windows</if_group>
+    <field name="win.system.eventID">^4769$</field>
+    <field name="win.eventdata.ticketEncryptionType">^0x17$</field>
+    <description>CERBERUS - Possible Kerberoasting: RC4 service ticket requested (T1558.003)</description>
+    <mitre>
+      <id>T1558.003</id>
+    </mitre>
+  </rule>
+</group>

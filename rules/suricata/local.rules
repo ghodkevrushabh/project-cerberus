@@ -1,0 +1,7 @@
+# Project Cerberus — Custom Suricata Rules
+# Place at /var/lib/suricata/rules/local.rules (NOT /etc/suricata/rules/ — see docs/01-environment-build.md
+# for why the file path matters more than it looks like it should).
+# Reference this file in suricata.yaml under rule-files:, alongside suricata.rules.
+
+# Phase 1 — Initial Access (T1110): flags a single source hitting 20+ ports within 10 seconds.
+alert tcp any any -> $HOME_NET any (msg:"CERBERUS - Possible port sweep from single source"; flags:S; threshold: type both, track by_src, count 20, seconds 10; classtype:network-scan; sid:1000001; rev:1;)
