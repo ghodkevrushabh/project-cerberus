@@ -23,7 +23,7 @@
 
 ---
 
-A CDAC PG-DITISS capstone project: a five-phase ransomware kill chain (modeled on the DarkSide/BlackCat-ALPHV operational pattern seen in the Colonial Pipeline incident) emulated end-to-end in an isolated AWS lab, paired with independently engineered, hand-written detection for every phase, mapped to MITRE ATT&CK.
+A CDAC PGCP-ITISS capstone project: a five-phase ransomware kill chain (modeled on the DarkSide/BlackCat-ALPHV operational pattern seen in the Colonial Pipeline incident) emulated end-to-end in an isolated AWS lab, paired with independently engineered, hand-written detection for every phase, mapped to MITRE ATT&CK.
 
 This repo documents what we actually built and broke and fixed — not a sanitized "follow these 40 steps and nothing will ever go wrong" guide. Environments differ, tools update, and everyone's specific journey through a project like this looks a little different. What's here is ours: the real decisions, the real bugs, and the real reasoning behind every fix.
 
